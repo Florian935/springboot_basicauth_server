@@ -5,7 +5,9 @@ import com.licencepro.tp2.domain.Book;
 import com.licencepro.tp2.exception.book.BookDeletionException;
 import com.licencepro.tp2.exception.book.BookInsertException;
 import com.licencepro.tp2.exception.book.BookNotFoundException;
+import com.licencepro.tp2.exception.book.ResponseException;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -37,15 +39,21 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public Book getOne(String uuid) {
-        return getBook(uuid, String.format("Book with id '%s' not found", uuid));
+        return getBook(
+                uuid,
+                new BookNotFoundException(
+                        String.format("Book with id '%s' not found", uuid),
+                        BAD_REQUEST
+                )
+        );
     }
 
-    private Book getBook(String uuid, String errorMessage) {
+    private Book getBook(String uuid, ResponseException ex) {
         return books
                 .stream()
                 .filter(book -> book.getUuid().equals(uuid))
                 .findFirst()
-                .orElseThrow(() -> new BookNotFoundException(errorMessage, BAD_REQUEST));
+                .orElseThrow(() -> ex);
     }
 
     @Override
@@ -68,9 +76,13 @@ public class BookServiceImpl implements BookService {
     public void deleteOne(String uuid) {
         final Book book = getBook(
                 uuid,
-                String.format(
-                        "Cannot delete book with id '%s' because he doesn't exist",
-                        uuid));
+                new BookDeletionException(
+                        String.format(
+                                "Cannot delete book with id '%s' because he doesn't exist",
+                                uuid),
+                        BAD_REQUEST
+                )
+        );
         books.remove(book);
     }
 
@@ -81,7 +93,12 @@ public class BookServiceImpl implements BookService {
 
     private Book updateBook(Book book) {
         Book bookUpdated = getOne(book.getUuid());
-        bookUpdated.setName(book.getName());
+
+        if (StringUtils.hasText(book.getName())) {
+            bookUpdated.setName(book.getName());
+        } else {
+            throw new BookInsertException("Name cannot be null", BAD_REQUEST);
+        }
 
         return bookUpdated;
     }
