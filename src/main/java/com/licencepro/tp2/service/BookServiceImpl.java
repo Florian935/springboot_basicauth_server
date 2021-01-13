@@ -5,7 +5,6 @@ import com.licencepro.tp2.domain.Book;
 import com.licencepro.tp2.exception.book.BookDeletionException;
 import com.licencepro.tp2.exception.book.BookInsertException;
 import com.licencepro.tp2.exception.book.BookNotFoundException;
-import com.licencepro.tp2.exception.book.ResponseException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -13,8 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.*;
 
 @Service
 public class BookServiceImpl implements BookService {
@@ -39,21 +37,19 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public Book getOne(String uuid) {
-        return getBook(
-                uuid,
+        return getBookFromListByUuid(uuid).orElseThrow(() ->
                 new BookNotFoundException(
                         String.format("Book with id '%s' not found", uuid),
-                        BAD_REQUEST
+                        NOT_FOUND
                 )
         );
     }
 
-    private Book getBook(String uuid, ResponseException ex) {
+    private Optional<Book> getBookFromListByUuid(String uuid) {
         return books
                 .stream()
                 .filter(book -> book.getUuid().equals(uuid))
-                .findFirst()
-                .orElseThrow(() -> ex);
+                .findFirst();
     }
 
     @Override
@@ -74,24 +70,18 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public void deleteOne(String uuid) {
-        final Book book = getBook(
-                uuid,
+        final Book book = getBookFromListByUuid(uuid).orElseThrow(() ->
                 new BookDeletionException(
                         String.format(
                                 "Cannot delete book with id '%s' because he doesn't exist",
                                 uuid),
-                        BAD_REQUEST
-                )
-        );
+                        NOT_FOUND
+                ));
         books.remove(book);
     }
 
     @Override
     public Book update(Book book) {
-        return updateBook(book);
-    }
-
-    private Book updateBook(Book book) {
         Book bookUpdated = getOne(book.getUuid());
 
         if (StringUtils.hasText(book.getName())) {
