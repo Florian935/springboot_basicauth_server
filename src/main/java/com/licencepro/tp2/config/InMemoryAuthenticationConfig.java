@@ -7,29 +7,24 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import static com.licencepro.tp2.config.constant.RolesConstants.ROLE_ADMIN;
+import static com.licencepro.tp2.config.constant.RolesConstants.ROLE_USER;
+
 @Configuration
 @Order(2)
 public class InMemoryAuthenticationConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
-    public void configureInMemoryUserAuthentication(
+    public void configureInMemoryAuthentication(
             AuthenticationManagerBuilder auth, PasswordEncoder passwordEncoder)
             throws Exception {
         auth.inMemoryAuthentication()
                 .withUser("user")
-                .password(passwordEncoder.encode("password"))
-                .roles("USER")
-                .authorities("ROLE_USER");
-    }
-
-    @Autowired
-    public void configureInMemoryAdminAuthentication(
-            AuthenticationManagerBuilder auth, PasswordEncoder passwordEncoder)
-        throws Exception {
-        auth.inMemoryAuthentication()
+                    .password(passwordEncoder.encode("password"))
+                    .roles(ROLE_USER).and()
                 .withUser("admin")
-                .password(passwordEncoder.encode("password"))
-                .roles("ADMIN")
-                .authorities("ROLE_ADMIN");
+                    .password(passwordEncoder.encode("password"))
+                    .roles(ROLE_ADMIN)
+        ;
     }
 }
